@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '', // ⬅ WAJIB untuk Vercel atau hosting non-root
   plugins: [vue()],
   resolve: {
     alias: {
