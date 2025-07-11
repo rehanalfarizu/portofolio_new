@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchData } from '../utils/api'
+import { fetchData } from '../api/api'
 
 const stats = ref({ visitors: 0 })
 const items = ref([])

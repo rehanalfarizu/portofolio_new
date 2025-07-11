@@ -18,7 +18,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchData } from '../utils/api'
+import { fetchData } from '../api/api'
 
 const testimonials = ref([])
 
