@@ -14,6 +14,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'esbuild',
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,7 +26,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port:  5173,
+    port: 5173,
     open: true
   },
   preview: {
