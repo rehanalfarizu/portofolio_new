@@ -13,7 +13,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchData } from '../api/api'
+import { fetchData } from '../app/api'
 
 const experiences = ref([])
 
