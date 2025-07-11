@@ -1,58 +1,109 @@
-const express = require('express')
-const cors = require('cors')
-const { Sequelize, DataTypes } = require('sequelize')
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-const app = express()
-
-// Middleware
-app.use(cors())
-app.use(express.json()) // Gantikan body-parser
-
-// Koneksi PostgreSQL
-const sequelize = new Sequelize('portofolio_db', 'postgres', 'password_kamu', {
-  host: 'localhost',
+// Konfigurasi database
+const sequelize = new Sequelize({
   dialect: 'postgres',
-})
-
-// Cek koneksi
-sequelize.authenticate()
-  .then(() => console.log('🟢 PostgreSQL Connected'))
-  .catch(err => console.error('🔴 Connection Error:', err))
-
-// Model User
-const User = sequelize.define('User', {
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'portofolio_db',
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  define: {
+    timestamps: true,
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-})
-
-// Sinkron DB
-sequelize.sync({ alter: true })
-
-// GET semua user
-app.get('/api/users', async (req, res) => {
-  const users = await User.findAll()
-  res.json(users)
-})
-
-// POST user baru
-app.post('/api/users', async (req, res) => {
-  try {
-    const { name, email } = req.body
-    const newUser = await User.create({ name, email })
-    res.json(newUser)
-  } catch (error) {
-    console.error('❌ Error saat menambah user:', error)
-    res.status(500).json({ error: 'Gagal tambah user' })
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
   }
-})
+});
 
-// Mulai server
-app.listen(3000, () => {
-  console.log('🚀 Server berjalan di http://localhost:3000')
-})
+// Import models dengan error handling
+let models = {};
+
+try {
+  const User = require('./user')(sequelize);
+  const Project = require('./project')(sequelize);
+  const Skill = require('./skill')(sequelize);
+  const Experience = require('./experience')(sequelize);
+  const Education = require('./education')(sequelize);
+  const Contact = require('./contact')(sequelize);
+  const Biodata = require('./biodata')(sequelize); // Tambahkan Biodata
+
+  // Define models object
+  models = {
+    User,
+    Project,
+    Skill,
+    Experience,
+    Education,
+    Contact,
+    Biodata
+  };
+
+} catch (error) {
+  console.error('Error loading models:', error.message);
+  throw error;
+}
+
+// Setup associations if needed
+Object.keys(models).forEach(modelName => {
+  if (models[modelName].associate) {
+    models[modelName].associate(models);
+  }
+});
+
+// Function to create database if not exists
+async function createDatabaseIfNotExists() {
+  try {
+    // Create a connection without specifying database
+    const adminSequelize = new Sequelize({
+      dialect: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      logging: false
+    });
+
+    // Check if database exists, if not create it
+    const databaseName = process.env.DB_NAME || 'portofolio_db';
+    
+    try {
+      await adminSequelize.query(`CREATE DATABASE "${databaseName}"`, {
+        type: Sequelize.QueryTypes.RAW
+      });
+      console.log(`✅ Database "${databaseName}" created successfully`);
+    } catch (err) {
+      // Database might already exist
+      if (err.message.includes('already exists')) {
+        console.log(`ℹ️  Database "${databaseName}" already exists`);
+      } else {
+        throw err;
+      }
+    }
+
+    await adminSequelize.close();
+    
+    // Test connection to the actual database
+    await sequelize.authenticate();
+    console.log('✅ Database connection established successfully');
+    
+  } catch (error) {
+    console.error('❌ Unable to connect to database:', error.message);
+    throw error;
+  }
+}
+
+module.exports = {
+  sequelize,
+  Sequelize,
+  createDatabaseIfNotExists,
+  ...models
+};
