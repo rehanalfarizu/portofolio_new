@@ -32,7 +32,7 @@
     <!-- Content -->
     <div class="relative z-20 p-6 text-center max-w-4xl mx-auto">
       <h2 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-tight">
-        Welcome to My Portfolio
+        {{ staticText }}{{ displayedText }}<span class="typewriter-cursor" v-if="showCursor">|</span>
       </h2>
       <p class="text-xl md:text-2xl text-gray-200 mb-8 max-w-2xl mx-auto">
         Explore my work, skills, and experience.
@@ -73,6 +73,16 @@ const videoSrc = ref('/Zoro_1.mp4')
 const videoLoaded = ref(false)
 const videoError = ref(false)
 
+// Typewriter animation variables
+const staticText = "Welcome to My "
+const dynamicWords = ["Portfolio", "Design", "Web Development", "Projects", "Skills", "Experience"]
+const currentWordIndex = ref(0)
+const displayedText = ref("")
+const showCursor = ref(true)
+const typingSpeed = 100 // milliseconds per character
+const deletingSpeed = 50 // milliseconds per character when deleting
+const pauseTime = 2000 // pause time after typing complete
+
 const onVideoLoaded = () => {
   console.log('Video loaded successfully')
   videoLoaded.value = true
@@ -97,6 +107,45 @@ const playVideo = async () => {
   }
 }
 
+// Typewriter animation function with dynamic words
+const typeWriter = () => {
+  let i = 0
+  let isDeleting = false
+
+  const animate = () => {
+    const currentWord = dynamicWords[currentWordIndex.value]
+
+    if (!isDeleting) {
+      // Typing phase
+      if (i < currentWord.length) {
+        displayedText.value = currentWord.substring(0, i + 1)
+        i++
+        setTimeout(animate, typingSpeed)
+      } else {
+        // Pause before deleting
+        setTimeout(() => {
+          isDeleting = true
+          animate()
+        }, pauseTime)
+      }
+    } else {
+      // Deleting phase
+      if (i > 0) {
+        displayedText.value = currentWord.substring(0, i - 1)
+        i--
+        setTimeout(animate, deletingSpeed)
+      } else {
+        // Move to next word and start typing again
+        isDeleting = false
+        currentWordIndex.value = (currentWordIndex.value + 1) % dynamicWords.length
+        setTimeout(animate, typingSpeed)
+      }
+    }
+  }
+
+  animate()
+}
+
 onMounted(async () => {
   await nextTick()
 
@@ -111,6 +160,11 @@ onMounted(async () => {
   } else {
     console.error('Video element not found')
   }
+
+  // Start typewriter animation after a short delay
+  setTimeout(() => {
+    typeWriter()
+  }, 500)
 })
 
 // Fungsi untuk button actions
@@ -147,6 +201,16 @@ video {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Typewriter cursor animation */
+.typewriter-cursor {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 /* Memastikan container tidak ada scroll */
