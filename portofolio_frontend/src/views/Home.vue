@@ -25,8 +25,9 @@
       style="z-index: 1;"
     ></div>
 
-    <!-- Dark Overlay -->
-    <!----<div class="absolute inset-0 bg-black bg-opacity-50" style="z-index: 2;"></div>-->
+    <!-- Multiple overlay layers -->
+    <div class="absolute inset-0 bg-black/30" style="z-index: 2; pointer-events: none;"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-black/20 to-transparent" style="z-index: 3; pointer-events: none;"></div>
 
     <!-- Content -->
     <div class="relative z-20 p-6 text-center max-w-4xl mx-auto">
