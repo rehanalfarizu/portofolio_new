@@ -1,232 +1,128 @@
-const { sequelize, testConnection, syncDatabase, checkDatabaseStatus } = require('../config/database');
+const { Sequelize } = require('sequelize');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
 
-// Import semua model
-const User = require('./user');
-const Biodata = require('./biodata');
-const Skill = require('./skill');
-const Experience = require('./experience');
-const Project = require('./project');
-const Testimonial = require('./testimonial');
-const Contact = require('./contact');
-const Stat = require('./stat');
-
-// Definisikan associations/relationships antar model
-const setupAssociations = () => {
-  try {
-    console.log('🔗 Setting up model associations...');
-    
-    // User dan Biodata (One-to-One)
-    if (User && Biodata) {
-      User.hasOne(Biodata, { 
-        foreignKey: 'user_id', 
-        as: 'biodata',
-        onDelete: 'CASCADE'
-      });
-      Biodata.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // User dan Skills (One-to-Many)
-    if (User && Skill) {
-      User.hasMany(Skill, { 
-        foreignKey: 'user_id', 
-        as: 'skills',
-        onDelete: 'CASCADE'
-      });
-      Skill.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // User dan Experience (One-to-Many)
-    if (User && Experience) {
-      User.hasMany(Experience, { 
-        foreignKey: 'user_id', 
-        as: 'experiences',
-        onDelete: 'CASCADE'
-      });
-      Experience.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // User dan Projects (One-to-Many)
-    if (User && Project) {
-      User.hasMany(Project, { 
-        foreignKey: 'user_id', 
-        as: 'projects',
-        onDelete: 'CASCADE'
-      });
-      Project.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // User dan Testimonials (One-to-Many)
-    if (User && Testimonial) {
-      User.hasMany(Testimonial, { 
-        foreignKey: 'user_id', 
-        as: 'testimonials',
-        onDelete: 'CASCADE'
-      });
-      Testimonial.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // User dan Stats (One-to-Many)
-    if (User && Stat) {
-      User.hasMany(Stat, { 
-        foreignKey: 'user_id', 
-        as: 'stats',
-        onDelete: 'CASCADE'
-      });
-      Stat.belongsTo(User, { 
-        foreignKey: 'user_id', 
-        as: 'user'
-      });
-    }
-    
-    // Contact tidak perlu association karena bisa standalone
-    
-    console.log('✅ Model associations setup completed');
-    
-  } catch (error) {
-    console.error('❌ Error setting up associations:', error);
-    throw error;
+// Konfigurasi database
+const sequelize = new Sequelize({
+  dialect: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'portofolio_db',
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  },
+  define: {
+    timestamps: true,
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
-};
+});
 
-// Initialize database dengan langkah-langkah yang terstruktur
-const initializeDatabase = async (options = {}) => {
+// Function untuk membuat database jika belum ada
+const createDatabaseIfNotExists = async () => {
   try {
-    console.log('🚀 Initializing database...');
-    
-    // Step 1: Test connection
-    console.log('📡 Step 1: Testing database connection...');
-    await testConnection();
-    
-    // Step 2: Setup associations
-    console.log('🔗 Step 2: Setting up model associations...');
-    setupAssociations();
-    
-    // Step 3: Sync database
-    console.log('🔄 Step 3: Synchronizing database...');
-    await syncDatabase(options);
-    
-    // Step 4: Check final status
-    console.log('📊 Step 4: Checking database status...');
-    const status = await checkDatabaseStatus();
-    
-    console.log('✅ Database initialization completed successfully!');
-    return status;
-    
-  } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-    throw error;
-  }
-};
+    const tempSequelize = new Sequelize({
+      dialect: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 5432,
+      database: 'postgres', // Connect ke default postgres database
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      logging: false
+    });
 
-// Fungsi untuk reset database (development only)
-const resetDatabase = async () => {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Database reset is not allowed in production!');
-  }
-  
-  try {
-    console.log('🔄 Resetting database...');
-    
-    // Drop semua tabel
-    await sequelize.drop();
-    console.log('🗑️  All tables dropped');
-    
-    // Setup associations lagi
-    setupAssociations();
-    
-    // Sync dengan force
-    await syncDatabase({ force: true });
-    console.log('✅ Database reset completed');
-    
-  } catch (error) {
-    console.error('❌ Error resetting database:', error);
-    throw error;
-  }
-};
+    // Cek apakah database sudah ada
+    const [results] = await tempSequelize.query(
+      `SELECT 1 FROM pg_database WHERE datname = '${process.env.DB_NAME || 'portofolio_db'}'`
+    );
 
-// Fungsi untuk seed data awal (opsional)
-const seedInitialData = async () => {
-  try {
-    console.log('🌱 Seeding initial data...');
-    
-    // Cek apakah sudah ada data
-    const userCount = await User.count();
-    
-    if (userCount === 0) {
-      console.log('📝 Creating initial user...');
-      
-      // Buat user default
-      const defaultUser = await User.create({
-        username: 'admin',
-        email: 'admin@portfolio.com',
-        password: 'admin123', // Hash ini di model User
-        role: 'admin',
-        is_active: true
-      });
-      
-      console.log('✅ Initial user created:', defaultUser.username);
-      
-      // Buat biodata default
-      await Biodata.create({
-        user_id: defaultUser.id,
-        full_name: 'Portfolio Owner',
-        title: 'Full Stack Developer',
-        description: 'Welcome to my portfolio!',
-        phone: '+62-xxx-xxx-xxxx',
-        address: 'Indonesia',
-        birth_date: '1990-01-01'
-      });
-      
-      console.log('✅ Initial biodata created');
-      
+    if (results.length === 0) {
+      // Buat database baru
+      await tempSequelize.query(
+        `CREATE DATABASE "${process.env.DB_NAME || 'portofolio_db'}"`
+      );
+      console.log(`✅ Database "${process.env.DB_NAME || 'portofolio_db'}" created successfully`);
     } else {
-      console.log('✅ Initial data already exists, skipping seed');
+      console.log(`✅ Database "${process.env.DB_NAME || 'portofolio_db'}" already exists`);
     }
-    
+
+    await tempSequelize.close();
   } catch (error) {
-    console.error('❌ Error seeding initial data:', error);
+    console.error('❌ Error creating database:', error.message);
     throw error;
   }
 };
 
-// Export semua yang diperlukan
-module.exports = {
-  // Database instance
-  sequelize,
-  
-  // Database functions
-  initializeDatabase,
-  resetDatabase,
-  seedInitialData,
-  setupAssociations,
-  
-  // Models
-  User,
-  Biodata,
-  Skill,
-  Experience,
-  Project,
-  Testimonial,
-  Contact,
-  Stat,
-  
-  // Utility functions
-  testConnection,
-  syncDatabase,
-  checkDatabaseStatus
+// Auto-load semua model dari folder models
+const db = {};
+const basename = path.basename(__filename);
+
+fs.readdirSync(__dirname)
+  .filter(file => {
+    return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
+  })
+  .forEach(file => {
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
+  });
+
+// Setup associations
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
+// Test koneksi database
+const testConnection = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('✅ Database connection has been established successfully.');
+    
+    // Get database version
+    const [results] = await sequelize.query('SELECT version()');
+    console.log('📊 PostgreSQL Version:', results[0].version);
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Unable to connect to the database:', error);
+    throw error;
+  }
 };
+
+// Sync database
+const syncDatabase = async (options = {}) => {
+  try {
+    console.log('🔄 Syncing database...');
+    
+    const syncOptions = {
+      force: false,
+      alter: false,
+      logging: console.log,
+      ...options
+    };
+    
+    await sequelize.sync(syncOptions);
+    console.log('✅ Database synchronized successfully');
+    
+  } catch (error) {
+    console.error('❌ Database sync failed:', error);
+    throw error;
+  }
+};
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+db.createDatabaseIfNotExists = createDatabaseIfNotExists;
+db.testConnection = testConnection;
+db.syncDatabase = syncDatabase;
+
+module.exports = db;

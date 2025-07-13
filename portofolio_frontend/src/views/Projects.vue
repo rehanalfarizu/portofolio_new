@@ -12,7 +12,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchData } from '../app/api'
+import { fetchData } from '../services/api'
 
 const projects = ref([])
 

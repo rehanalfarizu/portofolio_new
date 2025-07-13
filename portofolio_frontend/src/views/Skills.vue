@@ -11,7 +11,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../app/api'
+import api from '../services/api'
 
 const skills = ref([])
 
