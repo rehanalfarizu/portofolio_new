@@ -124,10 +124,10 @@
           {{ notification.message }}
         </div>
       </div>
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
         <!-- Dashboard Content -->
-<div v-if="activeTab === 'dashboard'" class="space-y-6">
+<div v-if="activeTab === 'dashboard'" class="space-y-8">
   <!-- Welcome Section -->
   <div class="bg-white rounded-lg shadow-md p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-2">Welcome to Admin Dashboard</h2>
@@ -183,7 +183,7 @@
 </div>
 
   <!-- Recent Activity -->
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="bg-white rounded-lg shadow-md p-6 mb-8">
   <h3 class="text-lg font-semibold text-gray-900 mb-3">Recent Activity</h3>
     <div class="space-y-3">
       <div class="flex items-center p-3 bg-gray-50 rounded-lg">

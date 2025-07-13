@@ -15,6 +15,7 @@ const routes = [
   { path: '/projects', name: 'Projects', component: Projects },
   { path: '/contact', name: 'Contact', component: Contact },
   { path: '/login', name: 'Login', component: Login },
+  // Ubah dari /Dashboard ke /dashboard (huruf kecil)
   { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
 ]
