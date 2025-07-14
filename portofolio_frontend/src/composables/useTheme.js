@@ -1,18 +1,47 @@
-import { onMounted, ref } from 'vue'
+import { reactive, watch } from 'vue'
 
-export const useTheme = () => {
-  const isDark = ref(false)
+const theme = reactive({
+  current: 'dark'
+})
 
-  const toggleTheme = () => {
-    isDark.value = !isDark.value
-    document.documentElement.classList.toggle('dark', isDark.value)
+const toggleTheme = () => {
+  theme.current = theme.current === 'dark' ? 'light' : 'dark'
+  updateTheme()
+}
+
+const setTheme = (newTheme) => {
+  theme.current = newTheme
+  updateTheme()
+}
+
+const updateTheme = () => {
+  document.documentElement.setAttribute('data-theme', theme.current)
+  localStorage.setItem('theme', theme.current)
+}
+
+const initTheme = () => {
+  const savedTheme = localStorage.getItem('theme')
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+  if (savedTheme) {
+    theme.current = savedTheme
+  } else if (prefersDark) {
+    theme.current = 'dark'
+  } else {
+    theme.current = 'light'
   }
 
-  onMounted(() => {
-    const darkMode = localStorage.getItem('theme') === 'dark'
-    isDark.value = darkMode
-    document.documentElement.classList.toggle('dark', darkMode)
-  })
-
-  return { isDark, toggleTheme }
+  updateTheme()
 }
+
+// Watch for system theme changes
+if (typeof window !== 'undefined') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (!localStorage.getItem('theme')) {
+      theme.current = e.matches ? 'dark' : 'light'
+      updateTheme()
+    }
+  })
+}
+
+export { theme, toggleTheme, setTheme, initTheme }

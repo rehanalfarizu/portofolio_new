@@ -9,4 +9,15 @@ const t = (key) => {
   return langData[key] || key
 }
 
-export { currentLang, t }
+const changeLang = (locale) => {
+  currentLang.locale = locale
+  localStorage.setItem('language', locale)
+}
+
+// Load saved language on init
+const savedLang = localStorage.getItem('language')
+if (savedLang) {
+  currentLang.locale = savedLang
+}
+
+export { currentLang, t, changeLang }

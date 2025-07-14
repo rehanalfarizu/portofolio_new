@@ -39,27 +39,6 @@
       Your browser does not support the audio element.
     </audio>
 
-    <!-- Audio Control Button - ENHANCED -->
-    <button
-      @click="toggleAudio"
-      class="absolute top-4 right-4 z-30 bg-black bg-opacity-50 hover:bg-opacity-70 p-3 rounded-full transition-all duration-300"
-      :class="{ 'animate-pulse': !audioLoaded, 'bg-green-500': audioPlaying && audioLoaded && !audioRef?.muted }"
-    >
-      <span v-if="!audioLoaded" class="text-white">⏳</span>
-      <span v-else-if="audioPlaying && !audioRef?.muted" class="text-white">🔊</span>
-      <span v-else-if="audioPlaying && audioRef?.muted" class="text-white">🔇</span>
-      <span v-else class="text-white">🔇</span>
-    </button>
-
-    <!-- Audio Status Indicator -->
-    <div class="absolute top-4 left-4 z-30 bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg text-sm">
-      <span v-if="audioLoaded && audioPlaying && !audioRef?.muted" class="text-green-400">🎵 Audio Playing</span>
-      <span v-else-if="audioLoaded && audioPlaying && audioRef?.muted" class="text-yellow-400">🎵 Audio Muted</span>
-      <span v-else-if="audioLoaded && !audioPlaying" class="text-yellow-400">🎵 Audio Ready</span>
-      <span v-else-if="audioError" class="text-red-400">❌ Audio Error</span>
-      <span v-else class="text-gray-400">⏳ Loading Audio...</span>
-    </div>
-
     <!-- Fallback Background -->
     <div
       v-if="videoError || !videoLoaded"
@@ -97,8 +76,32 @@
       </div>
     </div>
 
+    <!-- Audio Controls - MOVED TO BOTTOM -->
+    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center gap-4">
+      <!-- Audio Status Indicator -->
+      <div class="bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg text-sm">
+        <span v-if="audioLoaded && audioPlaying && !audioRef?.muted" class="text-green-400">🎵 Audio Playing</span>
+        <span v-else-if="audioLoaded && audioPlaying && audioRef?.muted" class="text-yellow-400">🎵 Audio Muted</span>
+        <span v-else-if="audioLoaded && !audioPlaying" class="text-yellow-400">🎵 Audio Ready</span>
+        <span v-else-if="audioError" class="text-red-400">❌ Audio Error</span>
+        <span v-else class="text-gray-400">⏳ Loading Audio...</span>
+      </div>
+
+      <!-- Audio Control Button -->
+      <button
+        @click="toggleAudio"
+        class="bg-black bg-opacity-50 hover:bg-opacity-70 p-3 rounded-full transition-all duration-300"
+        :class="{ 'animate-pulse': !audioLoaded, 'bg-green-500': audioPlaying && audioLoaded && !audioRef?.muted }"
+      >
+        <span v-if="!audioLoaded" class="text-white">⏳</span>
+        <span v-else-if="audioPlaying && !audioRef?.muted" class="text-white">🔊</span>
+        <span v-else-if="audioPlaying && audioRef?.muted" class="text-white">🔇</span>
+        <span v-else class="text-white">🔇</span>
+      </button>
+    </div>
+
     <!-- Debug Panel (uncomment for debugging) -->
-    <!-- <div class="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-70 p-4 rounded-lg z-30 max-w-sm">
+    <!-- <div class="absolute top-4 left-4 text-white text-sm bg-black bg-opacity-70 p-4 rounded-lg z-30 max-w-sm">
       <div class="mb-2">
         <strong>🎵 Audio Debug Info:</strong>
       </div>
@@ -132,9 +135,10 @@ const videoError = ref(false)
 // Audio variables with multiple format support
 const audioRef = ref(null)
 const audioFormats = [
-  { src: '/wind.mp3', type: 'audio/mpeg' },
+  { src: '/background-sound.mp3', type: 'audio/mpeg' },
+
 ]
-const currentAudioSrc = ref('/wind.mp3') // Default to MP3
+const currentAudioSrc = ref('/background-sound.mp3') // Default to MP3
 const audioLoaded = ref(false)
 const audioError = ref(false)
 const audioPlaying = ref(false)

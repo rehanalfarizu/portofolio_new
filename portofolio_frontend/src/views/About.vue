@@ -32,11 +32,10 @@
           <!-- Left Content -->
           <div class="animate-fade-in text-center lg:text-left">
             <h1 class="text-5xl md:text-7xl font-bold mb-6">
-              Hi, I'm <span class="text-gray-300">Rehan</span>
+              Hi, I'm <span class="text-gray-300"> Raihan </span>
             </h1>
             <p class="text-2xl md:text-3xl mb-6 text-gray-400">
-              A <span class="text-white font-semibold">Designer</span> and
-              <span class="text-white font-semibold">Developer</span>
+              A <span class="text-white font-semibold typewriter-text">{{ displayText }}</span><span class="cursor">|</span>
             </p>
             <p class="text-lg md:text-xl text-gray-500 mb-8 max-w-2xl mx-auto lg:mx-0">
               Passionate in Frontend Dev and UI/UX Design. I create beautiful, functional, and user-friendly digital experiences using the latest technologies.
@@ -51,12 +50,17 @@
             </div>
           </div>
 
-          <!-- Right Content - Profile -->
+          <!-- Right Content - Profile with Photo -->
           <div class="flex justify-center lg:justify-end">
             <div class="relative">
               <div class="absolute -inset-4 bg-gray-600 rounded-full blur opacity-10 animate-pulse"></div>
-              <div class="relative w-80 h-80 md:w-96 md:h-96 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 shadow-2xl flex items-center justify-center">
-                <div class="text-6xl text-gray-400">👨‍💻</div>
+              <div class="relative w-80 h-80 md:w-96 md:h-96 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 shadow-2xl overflow-hidden">
+                <!-- Profile Photo Implementation -->
+                <img
+                  src="/rehan.png"
+                  alt="Raihan Profile Photo"
+                  class="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-110"
+                />
               </div>
             </div>
           </div>
@@ -127,7 +131,7 @@
             </div>
           </div>
         </div>
-        </div>
+      </div>
     </section>
 
     <!-- Education Section -->
@@ -245,14 +249,12 @@
         </div>
       </div>
     </section>
-
-    <!-- Footer -->
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+// Perbaikan untuk script setup bagian typewriter
+import { ref, onMounted, onUnmounted } from 'vue'
 
 // Generate random stars
 const stars = ref([])
@@ -267,6 +269,122 @@ const generateStars = () => {
     })
   }
 }
+
+// Enhanced Typewriter effect dengan perbaikan
+const displayText = ref('')
+const textArray = [
+  'Frontend Developer',
+  'UI/UX Designer',
+  'Sosial Media Design',
+  'Design Graphic',
+  'Backend Developer'
+]
+
+let currentTextIndex = 0
+let typewriterInterval = null
+
+const typeWriter = () => {
+  const typewriterSpeed = 100 // typing speed
+  const deleteSpeed = 50 // deleting speed
+  const pauseTime = 2000 // pause after typing
+  const nextTextDelay = 500 // delay before next text
+
+  let charIndex = 0
+  let isDeleting = false
+  let isWaiting = false
+
+  const type = () => {
+    const currentText = textArray[currentTextIndex]
+
+    if (isWaiting) {
+      isWaiting = false
+      isDeleting = true
+      return
+    }
+
+    if (!isDeleting) {
+      // Typing characters
+      if (charIndex < currentText.length) {
+        displayText.value = currentText.substring(0, charIndex + 1)
+        charIndex++
+        setTimeout(type, typewriterSpeed)
+      } else {
+        // Finished typing, wait then start deleting
+        isWaiting = true
+        setTimeout(type, pauseTime)
+      }
+    } else {
+      // Deleting characters
+      if (charIndex > 0) {
+        displayText.value = currentText.substring(0, charIndex - 1)
+        charIndex--
+        setTimeout(type, deleteSpeed)
+      } else {
+        // Finished deleting, move to next text
+        isDeleting = false
+        currentTextIndex = (currentTextIndex + 1) % textArray.length
+        setTimeout(type, nextTextDelay)
+      }
+    }
+  }
+
+  type()
+}
+
+// Alternatif menggunakan setInterval (lebih stabil)
+const typeWriterInterval = () => {
+  let textIndex = 0
+  let charIndex = 0
+  let isDeleting = false
+  let isPausing = false
+  let pauseCounter = 0
+
+  const typewriterSpeed = 100
+  const deleteSpeed = 50
+  const pauseTime = 20 // 20 * 100ms = 2000ms
+
+  typewriterInterval = setInterval(() => {
+    const currentText = textArray[textIndex]
+
+    if (isPausing) {
+      pauseCounter++
+      if (pauseCounter >= pauseTime) {
+        isPausing = false
+        isDeleting = true
+        pauseCounter = 0
+      }
+      return
+    }
+
+    if (!isDeleting) {
+      // Typing
+      if (charIndex < currentText.length) {
+        displayText.value = currentText.substring(0, charIndex + 1)
+        charIndex++
+      } else {
+        // Start pause before deleting
+        isPausing = true
+      }
+    } else {
+      // Deleting
+      if (charIndex > 0) {
+        displayText.value = currentText.substring(0, charIndex - 1)
+        charIndex--
+      } else {
+        // Move to next text
+        isDeleting = false
+        textIndex = (textIndex + 1) % textArray.length
+      }
+    }
+  }, typewriterSpeed)
+}
+
+// Cleanup interval saat component unmounted
+onUnmounted(() => {
+  if (typewriterInterval) {
+    clearInterval(typewriterInterval)
+  }
+})
 
 // Skills data
 const skills = ref([
@@ -329,6 +447,10 @@ const experiences = ref([
 
 onMounted(() => {
   generateStars()
+
+  // Pilih salah satu metode:
+  // typeWriter() // Metode recursif
+  typeWriterInterval() // Metode interval (lebih stabil)
 })
 </script>
 
@@ -358,6 +480,11 @@ onMounted(() => {
   100% { transform: translateX(-100%); }
 }
 
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 .animate-fade-in {
   animation: fadeIn 1s ease-out forwards;
 }
@@ -380,5 +507,18 @@ onMounted(() => {
 
 .animate-carousel:hover {
   animation-play-state: paused;
+}
+
+.typewriter-text {
+  color: #60a5fa;
+  font-weight: 600;
+  min-height: 1.2em;
+  display: inline-block;
+}
+
+.cursor {
+  animation: blink 1s infinite;
+  color: #60a5fa;
+  font-weight: bold;
 }
 </style>
