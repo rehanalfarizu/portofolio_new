@@ -17,31 +17,48 @@
       Your browser does not support the video tag.
     </video>
 
-    <!-- Audio Background -->
+    <!-- Audio Background - Fixed for autoplay -->
     <audio
       ref="audioRef"
       loop
       preload="auto"
+      crossorigin="anonymous"
+      :muted="!userInteracted"
       @loadeddata="onAudioLoaded"
       @error="onAudioError"
       @canplaythrough="onAudioCanPlay"
       @loadstart="onAudioLoadStart"
       @loadedmetadata="onAudioLoadedMetadata"
+      @play="onAudioPlay"
+      @pause="onAudioPause"
+      @ended="onAudioEnded"
     >
-      <source :src="audioSrc" type="audio/mpeg">
-      <source :src="audioSrc.replace('.mp3', '.wav')" type="audio/wav">
-      <source :src="audioSrc.replace('.mp3', '.ogg')" type="audio/ogg">
+      <source src="/background-sound.mp3" type="audio/mpeg">
+      <source src="/background-sound.wav" type="audio/wav">
+
+      Your browser does not support the audio element.
     </audio>
 
-    <!-- Audio Control Button -->
+    <!-- Audio Control Button - ENHANCED -->
     <button
       @click="toggleAudio"
-      class="absolute top-4 right-4 z-30 bg-opacity-50 p-3 rounded-full hover:bg-opacity-70 transition-opacity"
-      :class="{ 'animate-pulse': !audioLoaded }"
+      class="absolute top-4 right-4 z-30 bg-black bg-opacity-50 hover:bg-opacity-70 p-3 rounded-full transition-all duration-300"
+      :class="{ 'animate-pulse': !audioLoaded, 'bg-green-500': audioPlaying && audioLoaded && !audioRef?.muted }"
     >
-      <span v-if="!audioLoaded">⏳</span>
-      <span v-else>{{ audioPlaying ? '🔊' : '🔇' }}</span>
+      <span v-if="!audioLoaded" class="text-white">⏳</span>
+      <span v-else-if="audioPlaying && !audioRef?.muted" class="text-white">🔊</span>
+      <span v-else-if="audioPlaying && audioRef?.muted" class="text-white">🔇</span>
+      <span v-else class="text-white">🔇</span>
     </button>
+
+    <!-- Audio Status Indicator -->
+    <div class="absolute top-4 left-4 z-30 bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg text-sm">
+      <span v-if="audioLoaded && audioPlaying && !audioRef?.muted" class="text-green-400">🎵 Audio Playing</span>
+      <span v-else-if="audioLoaded && audioPlaying && audioRef?.muted" class="text-yellow-400">🎵 Audio Muted</span>
+      <span v-else-if="audioLoaded && !audioPlaying" class="text-yellow-400">🎵 Audio Ready</span>
+      <span v-else-if="audioError" class="text-red-400">❌ Audio Error</span>
+      <span v-else class="text-gray-400">⏳ Loading Audio...</span>
+    </div>
 
     <!-- Fallback Background -->
     <div
@@ -63,60 +80,67 @@
         Explore my work, skills, and experience.
       </p>
 
-      <!-- Call to Action Buttons -->
-      <div class="space-x-4">
+      <!-- Call to Action Buttons - CONSISTENT SIZING -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <button
-          @click="viewWork"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+          @click="aboutme"
+          class="w-full sm:w-40 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-300 text-center"
         >
-          View My Work
+          About Me
         </button>
         <button
           @click="contactMe"
-          class="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold py-3 px-8 rounded-lg transition-colors duration-300"
+          class="w-full sm:w-40 border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold py-3 px-8 rounded-lg transition-colors duration-300 text-center"
         >
           Contact Me
         </button>
       </div>
     </div>
 
-    <!-- Enhanced Debug Info -->
-   <!-- <div class="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded z-30 max-w-xs">
+    <!-- Debug Panel (uncomment for debugging) -->
+    <!-- <div class="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-70 p-4 rounded-lg z-30 max-w-sm">
       <div class="mb-2">
-        <strong>Audio Status:</strong>
+        <strong>🎵 Audio Debug Info:</strong>
       </div>
       <div class="space-y-1 text-xs">
-        <p>Source: {{ audioSrc }}</p>
+        <p>Source: {{ currentAudioSrc }}</p>
         <p>Loaded: <span :class="audioLoaded ? 'text-green-400' : 'text-red-400'">{{ audioLoaded ? 'Yes' : 'No' }}</span></p>
-        <p>Error: <span :class="audioError ? 'text-red-400' : 'text-green-400'">{{ audioError ? 'Yes' : 'No' }}</span></p>
-        <p>Playing: <span :class="audioPlaying ? 'text-green-400' : 'text-yellow-400'">{{ audioPlaying ? 'Yes' : 'No' }}</span></p>
         <p>Can Play: <span :class="audioCanPlay ? 'text-green-400' : 'text-yellow-400'">{{ audioCanPlay ? 'Yes' : 'No' }}</span></p>
-        <p>Element: {{ audioRef ? 'Found' : 'Not Found' }}</p>
+        <p>Playing: <span :class="audioPlaying ? 'text-green-400' : 'text-red-400'">{{ audioPlaying ? 'Yes' : 'No' }}</span></p>
+        <p>Muted: <span :class="audioRef?.muted ? 'text-yellow-400' : 'text-green-400'">{{ audioRef?.muted ? 'Yes' : 'No' }}</span></p>
+        <p>Error: <span :class="audioError ? 'text-red-400' : 'text-green-400'">{{ audioError || 'None' }}</span></p>
+        <p>Autoplay Attempts: {{ autoplayAttempts }}</p>
+        <p>User Interacted: {{ userInteracted ? 'Yes' : 'No' }}</p>
       </div>
       <div class="mt-2 space-x-2">
-        <button @click="testAudio" class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Test</button>
-        <button @click="checkAudioFile" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Check File</button>
-        <button @click="forceLoadAudio" class="bg-purple-500 text-white px-2 py-1 rounded text-xs">Force Load</button>
+        <button @click="forcePlayAudio" class="bg-green-500 text-white px-2 py-1 rounded text-xs">Force Play</button>
+        <button @click="checkAudioFile" class="bg-blue-500 text-white px-2 py-1 rounded text-xs">Check File</button>
       </div>
     </div> -->
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 
+// Video variables
 const videoRef = ref(null)
 const videoSrc = ref('/Zoro_1.mp4')
 const videoLoaded = ref(false)
 const videoError = ref(false)
 
-// Audio variables - FIXED PATH
+// Audio variables with multiple format support
 const audioRef = ref(null)
-const audioSrc = ref('/background-sound.wav') // Correct path for public folder
+const audioFormats = [
+  { src: '/wind.mp3', type: 'audio/mpeg' },
+]
+const currentAudioSrc = ref('/wind.mp3') // Default to MP3
 const audioLoaded = ref(false)
 const audioError = ref(false)
 const audioPlaying = ref(false)
 const audioCanPlay = ref(false)
+const userInteracted = ref(false)
+const autoplayAttempts = ref(0)
 
 // Typewriter animation variables
 const staticText = "Welcome to My "
@@ -130,13 +154,13 @@ const pauseTime = 2000
 
 // Video functions
 const onVideoLoaded = () => {
-  console.log('Video loaded successfully')
+  console.log('✅ Video loaded successfully')
   videoLoaded.value = true
   videoError.value = false
 }
 
 const onVideoError = (error) => {
-  console.error('Video error:', error)
+  console.error('❌ Video error:', error)
   videoError.value = true
   videoLoaded.value = false
 }
@@ -145,15 +169,15 @@ const playVideo = async () => {
   if (videoRef.value) {
     try {
       await videoRef.value.play()
-      console.log('Video is playing')
+      console.log('▶️ Video is playing')
     } catch (error) {
-      console.error('Video play failed:', error)
+      console.error('❌ Video play failed:', error)
       videoError.value = true
     }
   }
 }
 
-// Enhanced Audio functions
+// Enhanced Audio Event Handlers
 const onAudioLoadStart = () => {
   console.log('🔄 Audio load started')
 }
@@ -162,86 +186,135 @@ const onAudioLoadedMetadata = () => {
   console.log('📊 Audio metadata loaded')
 }
 
-const onAudioLoaded = () => {
+const onAudioLoaded = async () => {
   console.log('✅ Audio loaded successfully')
   audioLoaded.value = true
   audioError.value = false
 }
 
 const onAudioError = (error) => {
-  console.error('❌ Audio error:', error)
-  console.error('Audio src:', audioSrc.value)
-  console.error('Audio element:', audioRef.value)
-  audioError.value = true
+  console.error('❌ Audio error:', error.target?.error)
+  audioError.value = error.target?.error?.message || 'Unknown audio error'
   audioLoaded.value = false
 }
 
-const onAudioCanPlay = () => {
+const onAudioCanPlay = async () => {
   console.log('✅ Audio can play')
   audioCanPlay.value = true
-}
 
-const forceLoadAudio = () => {
-  console.log('🔧 Force loading audio...')
-  if (audioRef.value) {
-    audioRef.value.src = audioSrc.value
-    audioRef.value.load()
-    console.log('Audio force load initiated')
+  // Attempt autoplay when audio is ready
+  if (!audioPlaying.value) {
+    await attemptAutoplay()
   }
 }
 
-const checkAudioFile = async () => {
-  try {
-    const response = await fetch(audioSrc.value)
-    console.log('Audio file check - Status:', response.status)
-    console.log('Audio file check - OK:', response.ok)
-    console.log('Audio file check - Content-Type:', response.headers.get('content-type'))
+const onAudioPlay = () => {
+  console.log('▶️ Audio started playing')
+  audioPlaying.value = true
+}
 
-    if (response.ok) {
-      console.log('✅ Audio file exists and is accessible')
-    } else {
-      console.error('❌ Audio file not found or not accessible')
+const onAudioPause = () => {
+  console.log('⏸️ Audio paused')
+  audioPlaying.value = false
+}
+
+const onAudioEnded = () => {
+  console.log('🔄 Audio ended, will loop')
+  audioPlaying.value = false
+}
+
+// FIXED: Main autoplay function with muted start
+const attemptAutoplay = async () => {
+  if (!audioRef.value || !audioLoaded.value || audioPlaying.value) {
+    return false
+  }
+
+  autoplayAttempts.value++
+  console.log(`🎵 Attempting autoplay (attempt ${autoplayAttempts.value})`)
+
+  try {
+    // PENTING: Mulai dengan muted untuk autoplay
+    audioRef.value.muted = true
+    audioRef.value.volume = 0.2
+    audioRef.value.currentTime = 0
+
+    const playPromise = audioRef.value.play()
+
+    if (playPromise !== undefined) {
+      await playPromise
+      console.log('✅ Autoplay successful (muted)!')
+
+      // Jika berhasil, setup listener untuk unmute setelah user interaction
+      if (!userInteracted.value) {
+        setupUserInteractionAutoplay()
+      }
+
+      return true
     }
   } catch (error) {
-    console.error('❌ Error checking audio file:', error)
+    console.log('⚠️ Autoplay failed:', error.name, error.message)
+    setupUserInteractionAutoplay()
+    return false
   }
 }
 
-const testAudio = async () => {
-  console.log('🔧 Testing audio...')
-  console.log('Audio ref:', audioRef.value)
-  console.log('Audio src:', audioSrc.value)
-  console.log('Audio loaded:', audioLoaded.value)
-  console.log('Audio can play:', audioCanPlay.value)
+// FIXED: Enhanced user interaction autoplay with unmute
+const setupUserInteractionAutoplay = () => {
+  if (userInteracted.value) return
 
-  if (audioRef.value) {
-    try {
-      // Reset audio to beginning
-      audioRef.value.currentTime = 0
-      audioRef.value.volume = 0.3 // Lower volume for testing
+  console.log('🎯 Setting up user interaction autoplay...')
 
-      console.log('Attempting to play audio...')
-      await audioRef.value.play()
-      audioPlaying.value = true
-      console.log('✅ Test audio started successfully')
-    } catch (error) {
-      console.error('❌ Test audio failed:', error)
+  const events = ['click', 'touchstart', 'keydown', 'scroll']
 
-      // Try to understand the error
-      if (error.name === 'NotAllowedError') {
-        console.log('💡 User interaction required for audio playback')
-      } else if (error.name === 'NotSupportedError') {
-        console.log('💡 Audio format not supported')
+  const handleUserInteraction = async (event) => {
+    console.log('👆 User interaction detected:', event.type)
+    userInteracted.value = true
+
+    // Remove all event listeners
+    events.forEach(eventType => {
+      document.removeEventListener(eventType, handleUserInteraction, true)
+    })
+
+    // Unmute and start audio
+    if (audioRef.value && audioLoaded.value) {
+      try {
+        audioRef.value.muted = false
+        audioRef.value.volume = 0.2
+
+        if (!audioPlaying.value) {
+          await audioRef.value.play()
+        }
+
+        console.log('✅ Audio started and unmuted after user interaction')
+      } catch (error) {
+        console.error('❌ Audio failed after user interaction:', error)
+        // Try again with a slight delay
+        setTimeout(async () => {
+          try {
+            await audioRef.value.play()
+            console.log('✅ Audio started on retry after user interaction')
+          } catch (retryError) {
+            console.error('❌ Audio retry failed:', retryError)
+          }
+        }, 100)
       }
     }
-  } else {
-    console.error('❌ Audio element not found')
   }
+
+  // Add event listeners
+  events.forEach(eventType => {
+    document.addEventListener(eventType, handleUserInteraction, {
+      once: true,
+      passive: true,
+      capture: true
+    })
+  })
+
+  console.log('⏳ Waiting for user interaction to unmute audio...')
 }
 
+// FIXED: Manual toggle function
 const toggleAudio = async () => {
-  console.log('🔊 Toggle audio clicked')
-
   if (!audioRef.value) {
     console.error('❌ Audio element not found')
     return
@@ -253,56 +326,87 @@ const toggleAudio = async () => {
   }
 
   try {
+    userInteracted.value = true
+
     if (audioPlaying.value) {
       audioRef.value.pause()
-      audioPlaying.value = false
-      console.log('⏸️ Audio paused')
+      console.log('⏸️ Audio paused manually')
     } else {
+      audioRef.value.muted = false
       audioRef.value.volume = 0.3
-      audioRef.value.currentTime = 0 // Start from beginning
       await audioRef.value.play()
-      audioPlaying.value = true
-      console.log('▶️ Audio started playing')
+      console.log('▶️ Audio started manually')
     }
   } catch (error) {
-    console.error('❌ Audio toggle failed:', error)
-
-    if (error.name === 'NotAllowedError') {
-      console.log('💡 Browser blocked autoplay - user interaction required')
-    }
+    console.error('❌ Manual audio toggle failed:', error)
   }
 }
 
-// Improved auto-play initialization
-const initAudioAutoPlay = () => {
-  const tryAutoPlay = async () => {
-    if (audioRef.value && audioLoaded.value && !audioPlaying.value) {
-      try {
-        audioRef.value.volume = 0.2 // Start with lower volume
-        await audioRef.value.play()
-        audioPlaying.value = true
-        console.log('🎵 Auto-play audio started')
-      } catch (error) {
-        console.log('ℹ️ Auto-play blocked by browser (normal behavior)')
+// Force play function for debugging
+const forcePlayAudio = async () => {
+  if (!audioRef.value) return
+
+  try {
+    audioRef.value.muted = false
+    audioRef.value.volume = 0.3
+    audioRef.value.currentTime = 0
+    await audioRef.value.play()
+    userInteracted.value = true
+    console.log('🔧 Force play successful')
+  } catch (error) {
+    console.error('🔧 Force play failed:', error)
+  }
+}
+
+// Check multiple audio formats
+const checkAudioFile = async () => {
+  for (const format of audioFormats) {
+    try {
+      const response = await fetch(format.src)
+      console.log(`📁 Audio file check [${format.type}]:`, {
+        src: format.src,
+        status: response.status,
+        ok: response.ok,
+        contentType: response.headers.get('content-type'),
+        size: response.headers.get('content-length')
+      })
+
+      if (response.ok) {
+        console.log(`✅ Found working audio format: ${format.type}`)
+        currentAudioSrc.value = format.src
+        return format
       }
+    } catch (error) {
+      console.error(`📁 Audio file check failed for ${format.src}:`, error)
     }
   }
 
-  // Wait for user interaction
-  const events = ['click', 'touchstart', 'keydown']
-  const startOnInteraction = () => {
-    tryAutoPlay()
-    events.forEach(event => {
-      document.removeEventListener(event, startOnInteraction)
-    })
-  }
-
-  events.forEach(event => {
-    document.addEventListener(event, startOnInteraction, { once: true })
-  })
+  console.error('❌ No working audio formats found')
+  audioError.value = 'No supported audio formats found'
+  return null
 }
 
-// Typewriter animation function
+// Development helper function
+const initializeAudioForDevelopment = async () => {
+  // Untuk development, coba force play setelah delay
+  if (import.meta.env.DEV) {
+    setTimeout(async () => {
+      if (audioRef.value && audioLoaded.value && !audioPlaying.value) {
+        try {
+          audioRef.value.muted = false
+          audioRef.value.volume = 0.1
+          await audioRef.value.play()
+          userInteracted.value = true
+          console.log('🔧 Development autoplay successful')
+        } catch (error) {
+          console.log('🔧 Development autoplay failed, waiting for user interaction')
+        }
+      }
+    }, 2000)
+  }
+}
+
+// Typewriter animation
 const typeWriter = () => {
   let i = 0
   let isDeleting = false
@@ -337,9 +441,71 @@ const typeWriter = () => {
   animate()
 }
 
+// Page visibility change handler
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    if (audioRef.value && audioPlaying.value) {
+      audioRef.value.pause()
+    }
+  } else {
+    if (audioRef.value && audioLoaded.value && !audioPlaying.value && userInteracted.value) {
+      audioRef.value.play().catch(console.error)
+    }
+  }
+}
+
+// FIXED: Enhanced button functions that guarantee audio start
+const aboutme = async () => {
+  console.log('📄 About Me clicked')
+  userInteracted.value = true
+
+  // Force start audio regardless of current state
+  if (audioRef.value && audioLoaded.value) {
+    try {
+      audioRef.value.muted = false
+      audioRef.value.volume = 0.3
+      audioRef.value.currentTime = 0
+      const playPromise = audioRef.value.play()
+      if (playPromise !== undefined) {
+        await playPromise
+        console.log('✅ Audio started via About Me button')
+      }
+    } catch (error) {
+      console.error('❌ Audio failed on About Me :', error)
+    }
+  }
+
+  // Add your navigation logic here
+  // window.location.href = '/work' // Example
+}
+
+const contactMe = async () => {
+  console.log('📧 Contact me clicked')
+  userInteracted.value = true
+
+  // Force start audio regardless of current state
+  if (audioRef.value && audioLoaded.value) {
+    try {
+      audioRef.value.muted = false
+      audioRef.value.volume = 0.3
+      audioRef.value.currentTime = 0
+      const playPromise = audioRef.value.play()
+      if (playPromise !== undefined) {
+        await playPromise
+        console.log('✅ Audio started via Contact Me button')
+      }
+    } catch (error) {
+      console.error('❌ Audio failed on Contact Me:', error)
+    }
+  }
+
+  // Add your contact logic here
+  // window.open('mailto:your-email@example.com') // Example
+}
+
+// FIXED: Main mounting function
 onMounted(async () => {
   await nextTick()
-
   console.log('🚀 Component mounted')
 
   // Initialize video
@@ -348,47 +514,42 @@ onMounted(async () => {
     setTimeout(playVideo, 100)
   }
 
-  // Initialize audio with better error handling
+  // FIXED: Initialize audio with comprehensive fallback
   if (audioRef.value) {
     console.log('🎵 Audio element found')
-    console.log('Audio source:', audioSrc.value)
 
-    // Set initial volume
-    audioRef.value.volume = 0.3
+    // Set audio properties
+    audioRef.value.volume = 0.2
+    audioRef.value.preload = 'auto'
+    audioRef.value.muted = true // Mulai dengan muted
 
-    // Force set src and load
-    audioRef.value.src = audioSrc.value
+    // Check audio files and find the best format
+    const workingFormat = await checkAudioFile()
+    if (workingFormat) {
+      audioRef.value.src = workingFormat.src
+    }
+
+    // Load audio
     audioRef.value.load()
 
-    // Check if audio file exists
-    await checkAudioFile()
+    // Initialize development helper
+    await initializeAudioForDevelopment()
 
-    // Initialize auto-play attempt
-    initAudioAutoPlay()
   } else {
     console.error('❌ Audio element not found')
   }
 
+  // Add visibility change listener
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+
   // Start typewriter animation
-  setTimeout(typeWriter, 500)
+  setTimeout(typeWriter, 1000)
 })
 
-// Button functions
-const viewWork = () => {
-  console.log('View work clicked')
-  // Also try to start audio on button click
-  if (!audioPlaying.value) {
-    toggleAudio()
-  }
-}
-
-const contactMe = () => {
-  console.log('Contact me clicked')
-  // Also try to start audio on button click
-  if (!audioPlaying.value) {
-    toggleAudio()
-  }
-}
+// Cleanup
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
 </script>
 
 <style scoped>
