@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 max-w-xl mx-auto">
+  <div class="p-10 max-w-xl mx-auto mt-16">
     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Contact Me</h2>
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>

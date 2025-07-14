@@ -164,6 +164,11 @@ export default {
   z-index: 1000;
   padding: 0 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Tambahkan baris ini untuk menghilangkan garis putih */
+  border-top: none;
+  margin-top: 0;
+  box-shadow: none;
 }
 
 [data-theme="light"] .navbar {
@@ -465,4 +470,6 @@ export default {
 * {
   transition: color 0.3s ease, background-color 0.3s ease;
 }
+
+
 </style>

@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-white">
+  <div class="min-h-screen bg-gray-900 text-white mt-16">
     <!-- Header Section -->
-    <div class="bg-gray-800 py-16 px-6">
+    <div class="bg-gray-800 py-16 px-6 pt-20">
       <div class="max-w-6xl mx-auto">
         <h1 class="text-4xl md:text-5xl font-bold mb-6 text-center">My Projects</h1>
         <p class="text-xl text-gray-300 text-center max-w-3xl mx-auto leading-relaxed">
