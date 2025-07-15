@@ -27,8 +27,26 @@
           class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:transform hover:scale-105"
         >
           <!-- Project Image -->
-          <div class="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <div class="text-6xl">{{ project.icon }}</div>
+          <div class="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center relative overflow-hidden">
+            <img
+              v-if="project.imageUrl"
+              :src="project.imageUrl"
+              :alt="project.title"
+              class="w-full h-full object-cover"
+              @error="handleImageError"
+            />
+            <div v-else class="text-6xl">{{ project.icon }}</div>
+            <!-- Status Badge -->
+            <div v-if="project.status" class="absolute top-2 right-2">
+              <span :class="[
+                'px-2 py-1 text-xs rounded-full font-medium',
+                project.status === 'active' ? 'bg-green-500 text-white' :
+                project.status === 'completed' ? 'bg-blue-500 text-white' :
+                'bg-gray-500 text-white'
+              ]">
+                {{ project.status }}
+              </span>
+            </div>
           </div>
 
           <!-- Project Content -->
@@ -52,6 +70,7 @@
             <!-- Action Buttons -->
             <div class="flex gap-3">
               <a
+                v-if="project.githubUrl"
                 :href="project.githubUrl"
                 target="_blank"
                 class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"
@@ -114,11 +133,79 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import crudService from '../services/crudService.js'
+import dashboardService from '../services/dashboardService.js'
 
 const projects = ref([])
 const isLoading = ref(true)
 
-// Sample project data - replace with your actual API call
+// Fetch real projects from API
+const fetchProjects = async () => {
+  try {
+    isLoading.value = true
+    const response = await crudService.projects.getProjects({
+      page: 1,
+      limit: 100,
+      status: 'active'
+    })
+
+    if (response.success) {
+      // Transform data to match frontend structure
+      projects.value = response.data.map(project => ({
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        technologies: Array.isArray(project.technologies)
+          ? project.technologies
+          : project.technologies ? project.technologies.split(',').map(t => t.trim()) : [],
+        githubUrl: project.github_url || project.githubUrl,
+        liveUrl: project.demo_url || project.liveUrl,
+        icon: getProjectIcon(project.title), // Generate icon based on title
+        imageUrl: project.image_url || null,
+        status: project.status
+      }))
+    } else {
+      console.error('Failed to fetch projects:', response.message)
+    }
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    // Fallback to sample data if API fails
+    projects.value = sampleProjects
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Generate icon based on project title/type
+const getProjectIcon = (title) => {
+  const titleLower = title.toLowerCase()
+  if (titleLower.includes('ecommerce') || titleLower.includes('shop')) return '🛒'
+  if (titleLower.includes('chat') || titleLower.includes('message')) return '💬'
+  if (titleLower.includes('weather')) return '🌤️'
+  if (titleLower.includes('blog') || titleLower.includes('cms')) return '📝'
+  if (titleLower.includes('task') || titleLower.includes('todo')) return '📋'
+  if (titleLower.includes('portfolio') || titleLower.includes('personal')) return '🎨'
+  if (titleLower.includes('dashboard') || titleLower.includes('admin')) return '📊'
+  if (titleLower.includes('game')) return '🎮'
+  if (titleLower.includes('mobile') || titleLower.includes('app')) return '📱'
+  if (titleLower.includes('api') || titleLower.includes('backend')) return '⚙️'
+  return '💻' // Default icon
+}
+
+// Track visitor when page loads
+const trackPageVisit = async () => {
+  try {
+    await dashboardService.trackVisit({
+      pageVisited: '/projects',
+      referrer: document.referrer,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('Error tracking visit:', error)
+  }
+}
+
+// Sample fallback data
 const sampleProjects = [
   {
     id: 1,
@@ -127,7 +214,7 @@ const sampleProjects = [
     technologies: ["Vue.js", "Laravel", "MySQL", "Tailwind CSS"],
     githubUrl: "https://github.com/yourusername/ecommerce-platform",
     liveUrl: "https://your-ecommerce-demo.com",
-    icon: "🛒"
+    icon: "�"
   },
   {
     id: 2,
@@ -137,64 +224,14 @@ const sampleProjects = [
     githubUrl: "https://github.com/yourusername/task-manager",
     liveUrl: "https://your-task-manager.com",
     icon: "📋"
-  },
-  {
-    id: 3,
-    title: "Weather Dashboard",
-    description: "Dashboard cuaca interaktif dengan prediksi 7 hari, peta interaktif, dan fitur pencarian kota. Mengintegrasikan multiple weather APIs.",
-    technologies: ["Vue.js", "Chart.js", "OpenWeather API", "Leaflet"],
-    githubUrl: "https://github.com/yourusername/weather-dashboard",
-    liveUrl: "https://your-weather-app.com",
-    icon: "🌤️"
-  },
-  {
-    id: 4,
-    title: "Blog CMS",
-    description: "Content Management System untuk blog dengan rich text editor, media management, dan SEO optimization. Full-stack application.",
-    technologies: ["Vue.js", "Express.js", "PostgreSQL", "Redis"],
-    githubUrl: "https://github.com/yourusername/blog-cms",
-    liveUrl: null,
-    icon: "📝"
-  },
-  {
-    id: 5,
-    title: "Real-time Chat App",
-    description: "Aplikasi chat real-time dengan fitur group chat, file sharing, dan emoji reactions. Menggunakan WebSocket untuk komunikasi real-time.",
-    technologies: ["Vue.js", "Socket.io", "Node.js", "MongoDB"],
-    githubUrl: "https://github.com/yourusername/chat-app",
-    liveUrl: "https://your-chat-app.com",
-    icon: "💬"
-  },
-  {
-    id: 6,
-    title: "Portfolio Website",
-    description: "Website portfolio personal yang responsif dan modern dengan dark/light mode, smooth animations, dan optimized performance.",
-    technologies: ["Vue.js", "Tailwind CSS", "Vite", "Netlify"],
-    githubUrl: "https://github.com/yourusername/portfolio",
-    liveUrl: "https://your-portfolio.com",
-    icon: "🎨"
   }
 ]
 
-// Simulate API call
-const fetchProjects = async () => {
-  try {
-    // Replace this with your actual API call
-    // const response = await fetchData('projects')
-    // projects.value = response
-
-    // Simulate loading time
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    projects.value = sampleProjects
-  } catch (error) {
-    console.error('Error fetching projects:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchProjects()
+onMounted(async () => {
+  await Promise.all([
+    fetchProjects(),
+    trackPageVisit()
+  ])
 })
 </script>
 

@@ -5,7 +5,21 @@ const helmet = require('helmet');
 const compression = require('compression');
 require('dotenv').config();
 
-const { sequelize, createDatabaseIfNotExists } = require('./models');
+// Conditional database import
+let sequelize, createDatabaseIfNotExists;
+if (process.env.USE_DATABASE === 'true') {
+  const dbModels = require('./models');
+  sequelize = dbModels.sequelize;
+  createDatabaseIfNotExists = dbModels.createDatabaseIfNotExists;
+} else {
+  // Mock database functions when database is disabled
+  sequelize = {
+    authenticate: async () => Promise.resolve(),
+    sync: async () => Promise.resolve(),
+    close: async () => Promise.resolve()
+  };
+  createDatabaseIfNotExists = async () => Promise.resolve();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,7 +58,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Import routes
+console.log('📝 Importing routes...');
+const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const skillRoutes = require('./routes/skillRoutes');
+const experienceRoutes = require('./routes/experienceRoutes');
+const biodataRoutes = require('./routes/biodataRoutes');
+console.log('✅ All routes imported successfully');
 
 // Routes
 app.get('/', (req, res) => {
@@ -68,12 +90,14 @@ app.get('/', (req, res) => {
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    await sequelize.authenticate();
+    if (process.env.USE_DATABASE === 'true') {
+      await sequelize.authenticate();
+    }
     res.json({
       success: true,
       message: 'Backend is healthy',
       timestamp: new Date().toISOString(),
-      database: 'connected'
+      database: process.env.USE_DATABASE === 'true' ? 'connected' : 'disabled'
     });
   } catch (error) {
     res.status(503).json({
@@ -87,7 +111,34 @@ app.get('/api/health', async (req, res) => {
 });
 
 // API Routes
+console.log('📝 Registering API routes...');
+app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/skills', skillRoutes);
+app.use('/api/experiences', experienceRoutes);
+app.use('/api/biodata', biodataRoutes);
+console.log('✅ All API routes registered successfully');
+
+// List all registered routes
+console.log('📍 Registered API endpoints:');
+console.log('   POST /api/auth/login');
+console.log('   POST /api/auth/register');
+console.log('   GET  /api/auth/verify');
+console.log('   GET  /api/contact');
+console.log('   POST /api/contact');
+console.log('   GET  /api/contact/stats');
+console.log('   GET  /api/dashboard/stats');
+console.log('   GET  /api/projects');
+console.log('   POST /api/projects');
+console.log('   GET  /api/skills');
+console.log('   POST /api/skills');
+console.log('   GET  /api/experiences');
+console.log('   POST /api/experiences');
+console.log('   GET  /api/biodata');
+console.log('   POST /api/biodata');
+console.log('✅ All routes ready');
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -120,12 +171,16 @@ app.listen(PORT, async () => {
   try {
     console.log('🚀 Starting Portfolio Backend...');
     
-    await createDatabaseIfNotExists();
-    await sequelize.authenticate();
-    console.log('✅ Database connected successfully');
-    
-    await sequelize.sync({ alter: true });
-    console.log('✅ Database synchronized');
+    if (process.env.USE_DATABASE === 'true') {
+      await createDatabaseIfNotExists();
+      await sequelize.authenticate();
+      console.log('✅ Database connected successfully');
+      
+      await sequelize.sync({ alter: true });
+      console.log('✅ Database synchronized');
+    } else {
+      console.log('⚠️  Database is disabled (development mode)');
+    }
     
     console.log(`✅ Server is running on http://localhost:${PORT}`);
     console.log(`📧 Contact API: http://localhost:${PORT}/api/contact`);

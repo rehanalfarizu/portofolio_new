@@ -125,6 +125,10 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { useVisitorTracking } from '../composables/useVisitorTracking.js'
+
+// Visitor tracking
+const { trackPageVisit } = useVisitorTracking()
 
 // Video variables
 const videoRef = ref(null)

@@ -1,6 +1,22 @@
 <template>
   <div class="p-10 max-w-xl mx-auto mt-16">
     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">Contact Me</h2>
+
+    <!-- Test Connection Button -->
+    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+      <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">Connection Test</h3>
+      <button
+        @click="testConnection"
+        :disabled="isTestingConnection"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ isTestingConnection ? 'Testing...' : 'Test Backend Connection' }}
+      </button>
+      <div v-if="connectionStatus" class="mt-2 p-2 rounded" :class="connectionStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+        {{ connectionStatus.message }}
+      </div>
+    </div>
+
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <label class="block text-gray-700 dark:text-gray-300">Name</label>
@@ -89,6 +105,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useVisitorTracking } from '../composables/useVisitorTracking.js'
+
+// Visitor tracking
+const { trackPageVisit } = useVisitorTracking()
 import axios from 'axios'
 
 const form = ref({
@@ -103,6 +123,10 @@ const isSubmitting = ref(false)
 const errorMessage = ref('')
 const validationErrors = ref([])
 const errors = ref({})
+
+// Test connection variables
+const isTestingConnection = ref(false)
+const connectionStatus = ref(null)
 
 // Computed property untuk cek validitas form
 const isFormValid = computed(() => {
@@ -160,6 +184,45 @@ const validateForm = () => {
 
   errors.value = newErrors
   return Object.keys(newErrors).length === 0
+}
+
+// Test connection function
+const testConnection = async () => {
+  isTestingConnection.value = true
+  connectionStatus.value = null
+
+  try {
+    console.log('Testing backend connection...')
+    const response = await axios.get('http://localhost:3000/api/contact/test', {
+      timeout: 5000
+    })
+
+    console.log('Test response:', response.data)
+    connectionStatus.value = {
+      success: true,
+      message: `✅ Connection successful! ${response.data.message || 'Backend is working'}`
+    }
+  } catch (error) {
+    console.error('Connection test failed:', error)
+    let errorMessage = '❌ Connection failed: '
+
+    if (error.code === 'ECONNREFUSED') {
+      errorMessage += 'Server is not running (make sure backend is running on localhost:3000)'
+    } else if (error.code === 'ECONNABORTED') {
+      errorMessage += 'Connection timeout'
+    } else if (error.response?.status) {
+      errorMessage += `Server error (${error.response.status})`
+    } else {
+      errorMessage += error.message || 'Unknown error'
+    }
+
+    connectionStatus.value = {
+      success: false,
+      message: errorMessage
+    }
+  } finally {
+    isTestingConnection.value = false
+  }
 }
 
 const handleSubmit = async () => {

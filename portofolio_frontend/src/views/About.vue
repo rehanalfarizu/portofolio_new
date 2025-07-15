@@ -183,7 +183,13 @@
           </p>
         </div>
 
-        <div class="relative">
+        <!-- Loading State -->
+        <div v-if="isLoadingExperiences" class="flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        </div>
+
+        <!-- Experience Timeline -->
+        <div v-else class="relative">
           <!-- Timeline line -->
           <div class="absolute left-1/2 transform -translate-x-0.5 top-0 bottom-0 w-0.5 bg-gray-600"></div>
 
@@ -255,6 +261,7 @@
 <script setup>
 // Perbaikan untuk script setup bagian typewriter
 import { ref, onMounted, onUnmounted } from 'vue'
+import api from '../services/api.js'
 
 // Generate random stars
 const stars = ref([])
@@ -420,33 +427,56 @@ const education = ref([
   }
 ])
 
-// Experience data
-const experiences = ref([
-  {
-    title: 'Senior Frontend Developer',
-    company: 'Tech Solutions Inc.',
-    period: '2023 - Present',
-    description: 'Leading frontend development team, architecting scalable solutions, and mentoring junior developers. Responsible for implementing modern design systems and optimizing application performance.',
-    technologies: ['Vue.js', 'React', 'TypeScript', 'Tailwind CSS', 'GraphQL']
-  },
-  {
-    title: 'Full Stack Developer',
-    company: 'Digital Agency Pro',
-    period: '2022 - 2023',
-    description: 'Developed and maintained multiple client projects using modern web technologies. Collaborated with design teams to create responsive and user-friendly interfaces.',
-    technologies: ['JavaScript', 'Node.js', 'MongoDB', 'Express.js', 'React']
-  },
-  {
-    title: 'Frontend Developer',
-    company: 'StartupXYZ',
-    period: '2021 - 2022',
-    description: 'Built responsive web applications from ground up. Worked closely with UX/UI designers to implement pixel-perfect designs and ensure optimal user experience.',
-    technologies: ['HTML5', 'CSS3', 'JavaScript', 'Vue.js', 'Sass']
+// Experience data - load from API
+const experiences = ref([])
+const isLoadingExperiences = ref(true)
+
+// Fetch experiences from API
+const fetchExperiences = async () => {
+  try {
+    isLoadingExperiences.value = true
+    const response = await api.get('/api/experiences')
+    
+    if (response.data && response.data.success) {
+      // Transform API data to match current component structure
+      experiences.value = response.data.data.map(exp => ({
+        title: exp.position,
+        company: exp.company,
+        period: formatPeriod(exp.startDate, exp.endDate, exp.isCurrentJob),
+        description: exp.description,
+        technologies: ['Vue.js', 'Node.js', 'JavaScript'] // You can add technologies field to backend model if needed
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching experiences:', error)
+    // Fallback to default data if API fails
+    experiences.value = [
+      {
+        title: 'Senior Frontend Developer',
+        company: 'Tech Solutions Inc.',
+        period: '2023 - Present',
+        description: 'Leading frontend development team, architecting scalable solutions, and mentoring junior developers.',
+        technologies: ['Vue.js', 'React', 'TypeScript', 'Tailwind CSS', 'GraphQL']
+      }
+    ]
+  } finally {
+    isLoadingExperiences.value = false
   }
-])
+}
+
+// Format date period
+const formatPeriod = (startDate, endDate, isCurrentJob) => {
+  const start = new Date(startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+  if (isCurrentJob) {
+    return `${start} - Present`
+  }
+  const end = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+  return `${start} - ${end}`
+}
 
 onMounted(() => {
   generateStars()
+  fetchExperiences() // Fetch experiences from API
 
   // Pilih salah satu metode:
   // typeWriter() // Metode recursif

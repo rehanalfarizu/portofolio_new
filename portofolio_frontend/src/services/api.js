@@ -12,18 +12,24 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // HAPUS withCredentials untuk menghindari CORS issues
-  // withCredentials: true
+  withCredentials: true // Aktifkan untuk cookies dan auth
 });
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
+    // Add token to requests if available
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    
     console.log(`🚀 [${new Date().toLocaleTimeString()}] API Request:`, {
       method: config.method?.toUpperCase(),
       url: config.url,
       baseURL: config.baseURL,
-      data: config.data
+      data: config.data,
+      hasToken: !!token
     });
     return config;
   },

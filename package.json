@@ -1,0 +1,25 @@
+{
+  "name": "raihan-portfolio-fullstack",
+  "version": "1.0.0",
+  "description": "Raihan's Portfolio - Full Stack Application",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd portofolio_backend && node server.js",
+    "frontend": "cd portofolio_frontend && npm run dev",
+    "install-all": "cd portofolio_backend && npm install && cd ../portofolio_frontend && npm install",
+    "build": "cd portofolio_frontend && npm run build",
+    "start": "cd portofolio_backend && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "portfolio",
+    "vue",
+    "node",
+    "express",
+    "fullstack"
+  ],
+  "author": "Raihan",
+  "license": "MIT"
+}

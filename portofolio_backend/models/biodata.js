@@ -43,6 +43,32 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
     },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isEmail: {
+          msg: 'Must be a valid email address'
+        }
+      }
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: true
+    },
+    location: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    website: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isUrl: {
+          msg: 'Website must be a valid URL'
+        }
+      }
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

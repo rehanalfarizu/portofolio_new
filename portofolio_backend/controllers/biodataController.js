@@ -41,14 +41,28 @@ exports.getBiodataById = async (req, res) => {
 // CREATE new biodata
 exports.createBiodata = async (req, res) => {
   try {
-    const { title, subtitle, description, avatarUrl } = req.body;
+    const { name, title, bio, email, phone, location, website } = req.body;
     
-    const biodata = await Biodata.create({
-      title,
-      subtitle,
-      description,
-      avatarUrl
-    });
+    // Validate required fields
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Name is required'
+      });
+    }
+    
+    const biodataData = {
+      title: name, // Map name to title field
+      subtitle: title || '', // Map title to subtitle field  
+      description: bio || '', // Map bio to description field
+      email: email || null,
+      phone: phone || null,
+      location: location || null,
+      website: website || null,
+      user_id: req.user?.id || 6 // Default user_id if not provided
+    };
+    
+    const biodata = await Biodata.create(biodataData);
     
     res.status(201).json({
       success: true,
@@ -65,7 +79,7 @@ exports.createBiodata = async (req, res) => {
 // UPDATE biodata
 exports.updateBiodata = async (req, res) => {
   try {
-    const { title, subtitle, description, avatarUrl } = req.body;
+    const { name, title, bio, email, phone, location, website } = req.body;
     
     const biodata = await Biodata.findByPk(req.params.id);
     if (!biodata) {
@@ -76,10 +90,13 @@ exports.updateBiodata = async (req, res) => {
     }
     
     await biodata.update({
-      title,
-      subtitle,
-      description,
-      avatarUrl
+      title: name, // Map name to title field
+      subtitle: title, // Map title to subtitle field  
+      description: bio, // Map bio to description field
+      email,
+      phone,
+      location,
+      website
     });
     
     res.json({
